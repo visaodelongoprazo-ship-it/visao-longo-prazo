@@ -11,30 +11,41 @@ import {
   type StockRange,
 } from "../services/api/stocks"
 
+type Period = "1D" | "1M" | "6M" | "1A"
+
 function getAsset(ticker: string) {
   const normalized = ticker.trim().toUpperCase()
 
+  const mockAsset =
+    B3_MOCK_DATABASE[
+      normalized as keyof typeof B3_MOCK_DATABASE
+    ]
+
+  if (mockAsset) {
+    return {
+      ticker: normalized,
+      ...mockAsset,
+    }
+  }
+
   return {
     ticker: normalized,
-    ...(B3_MOCK_DATABASE[
-      normalized as keyof typeof B3_MOCK_DATABASE
-    ] ?? B3_MOCK_DATABASE.BBSE3),
+    company: `${normalized} - dados indisponíveis`,
+    lastUpdate: "Ticker não encontrado na base local",
+    fundamentals: [
+      ["Cotação", "-"],
+      ["P/L", "-"],
+      ["P/VP", "-"],
+      ["Dividend Yield", "-"],
+      ["VPA", "-"],
+      ["LPA", "-"],
+      ["DPA médio", "-"],
+      ["ROE", "-"],
+    ],
   }
 }
 
-export function useStockSearch() {
-  const [tickerInput, setTickerInput] = useState("BBSE3")
-  const [asset, setAsset] = useState(getAsset("BBSE3"))
-  const [loading, setLoading] = useState(false)
-  const [period, setPeriod] = useState<"1D" | "1M" | "6M" | "1A">("1A")
-
-  const [chartData, setChartData] = useState(
-    CHART_SERIES["1A"].map((price, index) => ({
-      name: `${index + 1}`,
-      price,
-    }))
-  )
-function getPeriodConfig(period: "1D" | "1M" | "6M" | "1A"): {
+function getPeriodConfig(period: Period): {
   range: StockRange
   interval: StockInterval
 } {
@@ -47,6 +58,39 @@ function getPeriodConfig(period: "1D" | "1M" | "6M" | "1A"): {
 
   return configs[period]
 }
+
+function formatChartData(stock: any, period: Period) {
+  if (!stock?.historicalDataPrice) return []
+
+  return stock.historicalDataPrice.map((item: any) => ({
+    name:
+      period === "1D"
+        ? new Date(item.date * 1000).toLocaleTimeString("pt-BR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : new Date(item.date * 1000).toLocaleDateString("pt-BR", {
+            month: "2-digit",
+            year: "2-digit",
+          }),
+    price: item.close,
+  }))
+}
+
+function getMockChartData() {
+  return CHART_SERIES["1A"].map((price, index) => ({
+    name: `${index + 1}`,
+    price,
+  }))
+}
+
+export function useStockSearch() {
+  const [tickerInput, setTickerInput] = useState("BBSE3")
+  const [asset, setAsset] = useState(getAsset("BBSE3"))
+  const [loading, setLoading] = useState(false)
+  const [period, setPeriodState] = useState<Period>("1A")
+  const [chartData, setChartData] = useState(getMockChartData())
+
   async function searchTicker() {
     try {
       setLoading(true)
@@ -54,78 +98,82 @@ function getPeriodConfig(period: "1D" | "1M" | "6M" | "1A"): {
       const normalized = tickerInput.trim().toUpperCase()
       const config = getPeriodConfig(period)
 
-const stock = await getStockQuote(
-  normalized,
-  config.range,
-  config.interval
-)
+      const stock = await getStockQuote(
+        normalized,
+        config.range,
+        config.interval
+      )
+
       const fallback = getAsset(normalized)
 
       setAsset({
-        ticker: stock.symbol,
-        company: stock.longName,
-        lastUpdate: "Dados reais via BRAPI",
+        ticker: stock?.symbol ?? fallback.ticker,
+        company: stock?.longName ?? fallback.company,
+        lastUpdate: stock
+          ? "Dados reais via BRAPI"
+          : fallback.lastUpdate,
         fundamentals: [
-          ["Cotação", `R$ ${stock.regularMarketPrice ?? fallback.fundamentals[0][1]}`],
-          ["P/L", stock.priceEarningsRatio ? stock.priceEarningsRatio.toFixed(2).replace(".", ",") : fallback.fundamentals[1][1]],
-          ["P/VP", stock.priceToBookRatio ? stock.priceToBookRatio.toFixed(2).replace(".", ",") : fallback.fundamentals[2][1]],
-          ["Dividend Yield", stock.dividendYield ? `${stock.dividendYield.toFixed(2).replace(".", ",")}%` : fallback.fundamentals[3][1]],
-          ["VPA", stock.bookValuePerShare?.toString() || fallback.fundamentals[4][1]],
-          ["LPA", stock.earningsPerShare?.toString() || fallback.fundamentals[5][1]],
+          ["Cotação", stock?.regularMarketPrice ? `R$ ${stock.regularMarketPrice}` : fallback.fundamentals[0][1]],
+          ["P/L", stock?.priceEarningsRatio ? stock.priceEarningsRatio.toFixed(2).replace(".", ",") : fallback.fundamentals[1][1]],
+          ["P/VP", stock?.priceToBookRatio ? stock.priceToBookRatio.toFixed(2).replace(".", ",") : fallback.fundamentals[2][1]],
+          ["Dividend Yield", stock?.dividendYield ? `${stock.dividendYield.toFixed(2).replace(".", ",")}%` : fallback.fundamentals[3][1]],
+          ["VPA", stock?.bookValuePerShare?.toString() || fallback.fundamentals[4][1]],
+          ["LPA", stock?.earningsPerShare?.toString() || fallback.fundamentals[5][1]],
           ["DPA médio", fallback.fundamentals[6][1]],
           ["ROE", fallback.fundamentals[7][1]],
         ],
       })
 
-      if (stock.historicalDataPrice) {
-        setChartData(
-          stock.historicalDataPrice.map((item: any) => ({
-            name: new Date(item.date * 1000).toLocaleDateString("pt-BR", {
-              month: "2-digit",
-              year: "2-digit",
-            }),
-            price: item.close,
-          }))
-        )
-      }
+      const nextChartData = formatChartData(stock, period)
+
+      setChartData(
+        nextChartData.length > 0 ? nextChartData : getMockChartData()
+      )
     } catch {
+      console.warn("Não foi possível carregar esse ticker na BRAPI.")
+
       setAsset(getAsset(tickerInput))
+      setChartData(getMockChartData())
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function changePeriod(nextPeriod: Period) {
+    try {
+      setLoading(true)
+      setPeriodState(nextPeriod)
+
+      const normalized = tickerInput.trim().toUpperCase()
+      const config = getPeriodConfig(nextPeriod)
+
+      const stock = await getStockQuote(
+        normalized,
+        config.range,
+        config.interval
+      )
+
+      const nextChartData = formatChartData(stock, nextPeriod)
+
+      setChartData(
+        nextChartData.length > 0 ? nextChartData : getMockChartData()
+      )
+    } catch {
+      console.warn("Não foi possível carregar o histórico desse período.")
+      setChartData(getMockChartData())
     } finally {
       setLoading(false)
     }
   }
 
   return {
-  tickerInput,
-  setTickerInput,
-  asset,
-  chartData,
-  searchTicker,
-  loading,
-  period,
-  setPeriod: async (nextPeriod: "1D" | "1M" | "6M" | "1A") => {
-    setPeriod(nextPeriod)
-
-    const normalized = tickerInput.trim().toUpperCase()
-    const config = getPeriodConfig(nextPeriod)
-    const stock = await getStockQuote(normalized, config.range, config.interval)
-
-    if (stock.historicalDataPrice) {
-      setChartData(
-        stock.historicalDataPrice.map((item: any) => ({
-          name:
-  period === "1D"
-    ? new Date(item.date * 1000).toLocaleTimeString("pt-BR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : new Date(item.date * 1000).toLocaleDateString("pt-BR", {
-        month: "2-digit",
-        year: "2-digit",
-      }),
-          price: item.close,
-        }))
-      )
-    }
-  },
-}}
+    tickerInput,
+    setTickerInput,
+    asset,
+    chartData,
+    searchTicker,
+    loading,
+    period,
+    setPeriod: changePeriod,
+  }
+}
