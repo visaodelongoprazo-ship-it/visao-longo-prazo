@@ -1,26 +1,30 @@
+const STORAGE_KEY = "visao-watchlist"
+
 export function getWatchlist(): string[] {
-  const data = localStorage.getItem("watchlist")
+  const data = localStorage.getItem(STORAGE_KEY)
 
   if (!data) return []
 
-  return JSON.parse(data)
-}
-
-export function saveWatchlist(list: string[]) {
-  localStorage.setItem("watchlist", JSON.stringify(list))
+  try {
+    return JSON.parse(data)
+  } catch {
+    return []
+  }
 }
 
 export function toggleWatchlist(ticker: string) {
   const current = getWatchlist()
 
-  if (current.includes(ticker)) {
-    const updated = current.filter((item) => item !== ticker)
-    saveWatchlist(updated)
-    return updated
-  }
+  const exists = current.includes(ticker)
 
-  const updated = [...current, ticker]
-  saveWatchlist(updated)
+  const updated = exists
+    ? current.filter((item) => item !== ticker)
+    : [...current, ticker]
+
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify(updated)
+  )
 
   return updated
 }
