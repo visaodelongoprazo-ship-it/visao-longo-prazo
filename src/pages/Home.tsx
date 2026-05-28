@@ -1,30 +1,18 @@
 import DashboardHeader from "../features/dashboard/components/DashboardHeader"
-import { formatPercent } from "../utils/format"
 import { parseNumber, getMetric } from "../features/valuation/financial"
 import { useStockSearch } from "../hooks/useStockSearch"
-import ValuationCard from "../features/valuation/components/ValuationCard"
 import Sidebar from "../features/dashboard/components/Sidebar"
 import QuoteChart from "../features/dashboard/components/QuoteChart"
 import InputField from "../features/dashboard/components/InputField"
 import ResultCard from "../features/dashboard/components/ResultCard"
-import { useGraham } from "../features/valuation/hooks/useGraham"
-import { useBazin } from "../features/valuation/hooks/useBazin"
-import { usePeterLynch } from "../features/valuation/hooks/usePeterLynch"
-import { useDCF } from "../features/valuation/hooks/useDCF"
 import { useState } from "react"
-import InputPill from "../features/dashboard/components/InputPill"
-import StepperPercent from "../features/dashboard/components/StepperPercent"
 import ThemeToggle from "../features/dashboard/components/ThemeToggle"
 import { getWatchlist, toggleWatchlist } from "../store/watchlist"
-
+import BazinCard from "../features/valuation/components/BazinCard"
+import GrahamCard from "../features/valuation/components/GrahamCard"
+import PeterLynchCard from "../features/valuation/components/PeterLynchCard"
+import DcfCard from "../features/valuation/components/DcfCard"
 const TOTAL_SHARES = 1941400000
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(Number.isFinite(value) ? value : 0)
-}
 
 export default function App() {
   const [activeMenu, setActiveMenu] = useState("Análise")
@@ -48,12 +36,7 @@ export default function App() {
     setPeriod,
   } = useStockSearch()
 
-  const [bazinYield, setBazinYield] = useState("6,0%")
-  const [lynchGrowth, setLynchGrowth] = useState("3,00%")
-  const [targetYield] = useState("6%")
-  const [targetPayout] = useState("97,26%")
-  const [projectedProfit] = useState("R$ 9.192.497.000")
-  const [profitProjection] = useState("0,00%")
+ 
 
   const [dcfPayout, setDcfPayout] = useState("97,26%")
   const [dcfRoe, setDcfRoe] = useState(getMetric(asset.fundamentals, "ROE"))
@@ -67,31 +50,6 @@ export default function App() {
   const dpa = getMetric(fundamentals, "DPA médio")
   const lpa = getMetric(fundamentals, "LPA")
   const vpa = getMetric(fundamentals, "VPA")
-
-  const bazin = useBazin({
-    dpa: parseNumber(dpa),
-    desiredYield: parseNumber(bazinYield),
-    currentPrice: current,
-  })
-
-  const graham = useGraham({
-    lpa: parseNumber(lpa),
-    vpa: parseNumber(vpa),
-    currentPrice: current,
-  })
-
-  const lynch = usePeterLynch({
-    dividendYield: parseNumber(dividendYield),
-    growth: parseNumber(lynchGrowth),
-  })
-
-  const projected = useDCF({
-    projectedProfit: parseNumber(projectedProfit),
-    payout: parseNumber(targetPayout),
-    desiredYield: parseNumber(targetYield),
-    projection: parseNumber(profitProjection),
-    totalShares: TOTAL_SHARES,
-  })
 
   const summary = [
     ["Cotação", currentPrice],
@@ -119,7 +77,11 @@ export default function App() {
       }`}
     >
       <div className="grid w-full grid-cols-[240px_1fr] gap-6">
-        <Sidebar active={activeMenu} setActive={setActiveMenu} />
+        <Sidebar
+  active={activeMenu}
+  setActive={setActiveMenu}
+  watchlist={watchlist}
+/>
 
         <main className="w-full space-y-5">
           <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
@@ -146,16 +108,15 @@ export default function App() {
                   <p className="text-sm text-slate-500">{asset.company}</p>
 
                   <button
-                    onClick={() => {
-                      const updated = toggleWatchlist(asset.ticker)
-                      setWatchlist(updated)
-                    }}
-                    className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-100"
-                  >
-                    {watchlist.includes(asset.ticker)
-                      ? "★ Favorito"
-                      : "☆ Favoritar"}
-                  </button>
+  type="button"
+  onClick={() => {
+    const updated = toggleWatchlist(asset.ticker)
+    setWatchlist(updated)
+  }}
+  className="rounded-xl border border-slate-300 bg-white px-3 py-1 text-xs font-semibold shadow-sm transition hover:bg-slate-100"
+>
+  ★ Favorito
+</button>
                 </div>
 
                 <p className="mt-1 text-xs text-slate-400">
@@ -194,48 +155,30 @@ export default function App() {
             </div>
 
             {tab === "Valuations" ? (
-              <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-4">
-                <ValuationCard
-                  title="Valuation Bazin"
-                  value={formatPercent(bazin.safetyMargin)}
-                  description={`Preço teto: ${formatCurrency(bazin.priceTarget)}`}
-                >
-                  <p className="mb-2 text-sm font-semibold">
-                    Dividend Yield que quer receber
-                  </p>
-                  <StepperPercent value={bazinYield} onChange={setBazinYield} />
-                </ValuationCard>
+  <div className="mt-6 space-y-6">
+    <BazinCard
+      currentPrice={current}
+      dpa={parseNumber(dpa)}
+    />
 
-                <ValuationCard
-                  title="Valuation Graham"
-                  value={formatPercent(graham.safetyMargin)}
-                  description={`Preço teto: ${formatCurrency(graham.priceTarget)}`}
-                />
+    <GrahamCard
+      currentPrice={current}
+      lpa={parseNumber(lpa)}
+      vpa={parseNumber(vpa)}
+    />
 
-                <ValuationCard
-                  title="Peter Lynch"
-                  value={lynch.score.toFixed(2).replace(".", ",")}
-                  description={lynch.label}
-                >
-                  <p className="mb-2 text-sm font-semibold">
-                    Crescimento projetivo
-                  </p>
-                  <InputPill
-                    value={lynchGrowth}
-                    onChange={setLynchGrowth}
-                    className="w-[120px]"
-                  />
-                </ValuationCard>
+    <PeterLynchCard
+      dividendYield={parseNumber(dividendYield)}
+      growth={3}
+    />
 
-                <ValuationCard
-                  title="DCF"
-                  value={formatCurrency(projected.fairValue)}
-                  description={`DPA projetivo: ${formatCurrency(
-                    projected.projectedDividendPerShare
-                  )}`}
-                />
-              </div>
-            ) : (
+    <DcfCard
+      currentPrice={current}
+      projectedDividendPerShare={4.61}
+fairValue={76.75}
+    />
+  </div>
+) : (
               <div className="mt-6 grid grid-cols-[360px_1fr] gap-5">
                 <div className="space-y-4">
                   <div className="overflow-hidden rounded-[24px] border border-slate-300 bg-[#f3f4f6]">
