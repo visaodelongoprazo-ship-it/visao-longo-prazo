@@ -43,6 +43,7 @@ const {
   chartData,
   searchTicker,
   loading,
+  error,
   period,
   setPeriod,
 } = useStockSearch()
@@ -129,12 +130,20 @@ const projected = useDCF({
     toggleTheme={toggleTheme}
   />
 </div>
-                  <DashboardHeader
-  tickerInput={tickerInput}
-  setTickerInput={setTickerInput}
-  searchTicker={searchTicker}
-  loading={loading}
-/>
+                  <div>
+  <DashboardHeader
+    tickerInput={tickerInput}
+    setTickerInput={setTickerInput}
+    searchTicker={searchTicker}
+    loading={loading}
+  />
+
+  {error && (
+    <p className="mt-2 text-sm font-medium text-red-500">
+      {error}
+    </p>
+  )}
+</div>
 
 
                  

@@ -88,12 +88,14 @@ export function useStockSearch() {
   const [tickerInput, setTickerInput] = useState("BBSE3")
   const [asset, setAsset] = useState(getAsset("BBSE3"))
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
   const [period, setPeriodState] = useState<Period>("1A")
   const [chartData, setChartData] = useState(getMockChartData())
 
   async function searchTicker() {
     try {
       setLoading(true)
+      setError("")
 
       const normalized = tickerInput.trim().toUpperCase()
       const config = getPeriodConfig(period)
@@ -130,7 +132,7 @@ export function useStockSearch() {
         nextChartData.length > 0 ? nextChartData : getMockChartData()
       )
     } catch {
-      console.warn("Não foi possível carregar esse ticker na BRAPI.")
+      setError("Ticker não encontrado ou indisponível.")
 
       setAsset(getAsset(tickerInput))
       setChartData(getMockChartData())
@@ -173,6 +175,7 @@ export function useStockSearch() {
     chartData,
     searchTicker,
     loading,
+    error,
     period,
     setPeriod: changePeriod,
   }
