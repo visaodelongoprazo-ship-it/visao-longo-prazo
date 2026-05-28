@@ -11,7 +11,7 @@ import { getWatchlist, toggleWatchlist } from "../store/watchlist"
 import BazinCard from "../features/valuation/components/BazinCard"
 import GrahamCard from "../features/valuation/components/GrahamCard"
 import PeterLynchCard from "../features/valuation/components/PeterLynchCard"
-import DcfCard from "../features/valuation/components/DcfCard"
+import DcfCard from "../features/valuation/components/PreçoTeto"
 const TOTAL_SHARES = 1941400000
 
 export default function App() {
@@ -155,7 +155,10 @@ export default function App() {
             </div>
 
             {tab === "Valuations" ? (
-  <div className="mt-6 space-y-6">
+  <div className="mt-6 space-y-5">
+
+  <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+
     <BazinCard
       currentPrice={current}
       dpa={parseNumber(dpa)}
@@ -172,12 +175,19 @@ export default function App() {
       growth={3}
     />
 
+  </div>
+
+  <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+
     <DcfCard
       currentPrice={current}
       projectedDividendPerShare={4.61}
-fairValue={76.75}
+      fairValue={76.75}
     />
+
   </div>
+
+</div>
 ) : (
               <div className="mt-6 grid grid-cols-[360px_1fr] gap-5">
                 <div className="space-y-4">
