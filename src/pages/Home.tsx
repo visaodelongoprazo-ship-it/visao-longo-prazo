@@ -55,6 +55,14 @@ const vpa = parseNumber(getMetric(fundamentals, "VPA"))
   getMetric(fundamentals, "Crescimento do Lucro")
 )
 
+const freeCashflow = parseNumber(
+  getMetric(fundamentals, "Fluxo de Caixa Livre")
+)
+
+const sharesOutstanding = parseNumber(
+  getMetric(fundamentals, "Ações em circulação")
+)
+
   const summary = [
     ["Cotação", currentPrice],
     ["Dividend Yield", dividendYield],
@@ -189,7 +197,12 @@ const vpa = parseNumber(getMetric(fundamentals, "VPA"))
     fairValue={dpa * 16}
   />
 
-  <RealDcfCard currentPrice={current} />
+  <RealDcfCard
+  currentPrice={current}
+  freeCashflow={freeCashflow}
+  sharesOutstanding={sharesOutstanding}
+  growth={growth}
+/>
   </div>
 
 </div>
