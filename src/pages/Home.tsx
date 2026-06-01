@@ -48,9 +48,12 @@ export default function App() {
   const currentPrice = getMetric(fundamentals, "Cotação")
   const current = parseNumber(currentPrice)
   const dividendYield = getMetric(fundamentals, "Dividend Yield")
-  const dpa = getMetric(fundamentals, "DPA médio")
-  const lpa = getMetric(fundamentals, "LPA")
-  const vpa = getMetric(fundamentals, "VPA")
+  const dpa = parseNumber(getMetric(fundamentals, "DPA médio"))
+const lpa = parseNumber(getMetric(fundamentals, "LPA"))
+const vpa = parseNumber(getMetric(fundamentals, "VPA"))
+  const growth = parseNumber(
+  getMetric(fundamentals, "Crescimento do Lucro")
+)
 
   const summary = [
     ["Cotação", currentPrice],
@@ -161,31 +164,32 @@ export default function App() {
   <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
 
     <BazinCard
-      currentPrice={current}
-      dpa={parseNumber(dpa)}
-    />
+  currentPrice={current}
+  dpa={dpa}
+/>
 
-    <GrahamCard
-      currentPrice={current}
-      lpa={parseNumber(lpa)}
-      vpa={parseNumber(vpa)}
-    />
+<GrahamCard
+  currentPrice={current}
+  lpa={lpa}
+  vpa={vpa}
+/>
 
-    <PeterLynchCard
-      dividendYield={parseNumber(dividendYield)}
-      growth={3}
-    />
+<PeterLynchCard
+  dividendYield={parseNumber(dividendYield)}
+  growth={growth}
+/>
 
-  </div>
+</div>
 
-  <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+<div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
 
-    <DcfCard
-      currentPrice={current}
-      projectedDividendPerShare={4.61}
-      fairValue={76.75}
-    />
-<RealDcfCard currentPrice={current} />
+  <DcfCard
+    currentPrice={current}
+    projectedDividendPerShare={dpa}
+    fairValue={dpa * 16}
+  />
+
+  <RealDcfCard currentPrice={current} />
   </div>
 
 </div>

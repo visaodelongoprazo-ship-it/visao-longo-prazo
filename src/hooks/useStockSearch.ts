@@ -105,7 +105,11 @@ export function useStockSearch() {
         config.range,
         config.interval
       )
-
+console.log("STOCK BRAPI:", stock)
+console.log(stock)
+console.log("SUMMARY PROFILE", stock.summaryProfile)
+console.log("FINANCIAL DATA", stock.financialData)
+console.log("KEY STATS", stock.defaultKeyStatistics)
       const fallback = getAsset(normalized)
 
       setAsset({
@@ -115,15 +119,81 @@ export function useStockSearch() {
           ? "Dados reais via BRAPI"
           : fallback.lastUpdate,
         fundamentals: [
-          ["Cotação", stock?.regularMarketPrice ? `R$ ${stock.regularMarketPrice}` : fallback.fundamentals[0][1]],
-          ["P/L", stock?.priceEarningsRatio ? stock.priceEarningsRatio.toFixed(2).replace(".", ",") : fallback.fundamentals[1][1]],
-          ["P/VP", stock?.priceToBookRatio ? stock.priceToBookRatio.toFixed(2).replace(".", ",") : fallback.fundamentals[2][1]],
-          ["Dividend Yield", stock?.dividendYield ? `${stock.dividendYield.toFixed(2).replace(".", ",")}%` : fallback.fundamentals[3][1]],
-          ["VPA", stock?.bookValuePerShare?.toString() || fallback.fundamentals[4][1]],
-          ["LPA", stock?.earningsPerShare?.toString() || fallback.fundamentals[5][1]],
-          ["DPA médio", fallback.fundamentals[6][1]],
-          ["ROE", fallback.fundamentals[7][1]],
-        ],
+  [
+    "Cotação",
+    stock?.regularMarketPrice
+      ? `R$ ${stock.regularMarketPrice.toFixed(2)}`
+      : fallback.fundamentals[0][1],
+  ],
+  [
+    "P/L",
+    stock?.priceEarnings
+      ? stock.priceEarnings.toFixed(2).replace(".", ",")
+      : fallback.fundamentals[1][1],
+  ],
+  [
+    "P/VP",
+    stock?.defaultKeyStatistics?.priceToBook
+      ? stock.defaultKeyStatistics.priceToBook.toFixed(2).replace(".", ",")
+      : fallback.fundamentals[2][1],
+  ],
+  [
+    "Dividend Yield",
+    stock?.defaultKeyStatistics?.dividendYield
+      ? `${(stock.defaultKeyStatistics.dividendYield * 100)
+          .toFixed(2)
+          .replace(".", ",")}%`
+      : fallback.fundamentals[3][1],
+  ],
+  [
+    "VPA",
+    stock?.defaultKeyStatistics?.bookValue
+      ? stock.defaultKeyStatistics.bookValue.toFixed(2).replace(".", ",")
+      : fallback.fundamentals[4][1],
+  ],
+  [
+    "LPA",
+    stock?.earningsPerShare
+      ? stock.earningsPerShare.toFixed(2).replace(".", ",")
+      : fallback.fundamentals[5][1],
+  ],
+  [
+    "DPA médio",
+    stock?.defaultKeyStatistics?.dividendYield && stock?.regularMarketPrice
+      ? (stock.defaultKeyStatistics.dividendYield * stock.regularMarketPrice)
+          .toFixed(2)
+          .replace(".", ",")
+      : fallback.fundamentals[6][1],
+  ],
+  [
+    "ROE",
+    stock?.financialData?.returnOnEquity
+      ? `${(stock.financialData.returnOnEquity * 100)
+          .toFixed(2)
+          .replace(".", ",")}%`
+      : fallback.fundamentals[7][1],
+  ],
+  [
+    "Fluxo de Caixa Livre",
+    stock?.financialData?.freeCashflow
+      ? stock.financialData.freeCashflow.toString()
+      : "0",
+  ],
+  [
+    "Crescimento do Lucro",
+    stock?.financialData?.earningsGrowth
+      ? `${(stock.financialData.earningsGrowth * 100)
+          .toFixed(2)
+          .replace(".", ",")}%`
+      : "0%",
+  ],
+  [
+    "Ações em circulação",
+    stock?.defaultKeyStatistics?.sharesOutstanding
+      ? stock.defaultKeyStatistics.sharesOutstanding.toString()
+      : "0",
+  ],
+],
       })
 
       const nextChartData = formatChartData(stock, period)
