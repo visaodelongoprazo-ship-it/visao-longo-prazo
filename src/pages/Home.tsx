@@ -12,6 +12,7 @@ import BazinCard from "../features/valuation/components/BazinCard"
 import GrahamCard from "../features/valuation/components/GrahamCard"
 import PeterLynchCard from "../features/valuation/components/PeterLynchCard"
 import DcfCard from "../features/valuation/components/PreçoTeto"
+import RealDcfCard from "../features/valuation/components/RealDcfCard"
 const TOTAL_SHARES = 1941400000
 
 export default function App() {
@@ -184,7 +185,7 @@ export default function App() {
       projectedDividendPerShare={4.61}
       fairValue={76.75}
     />
-
+<RealDcfCard currentPrice={current} />
   </div>
 
 </div>
