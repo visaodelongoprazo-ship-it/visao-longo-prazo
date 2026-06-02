@@ -1,17 +1,31 @@
-type Fundamental = string[]
+export function parseNumber(value: string | number) {
+  if (typeof value === "number") return value
 
-export function parseNumber(value: string) {
-  const cleaned = String(value)
-    .replace('R$', '')
-    .replace('%', '')
-    .replace(/\./g, '')
-    .replace(',', '.')
-    .trim()
+  if (!value) return 0
 
-  const number = Number(cleaned)
+  const cleaned = value
+    .replace("R$", "")
+    .replace("%", "")
+    .replace(/\s/g, "")
 
-  return Number.isFinite(number) ? number : 0
+  const hasComma = cleaned.includes(",")
+  const hasDot = cleaned.includes(".")
+
+  const normalized =
+    hasComma && hasDot
+      ? cleaned.replace(/\./g, "").replace(",", ".")
+      : hasComma
+        ? cleaned.replace(",", ".")
+        : cleaned
+
+  const parsed = Number(normalized)
+
+  return Number.isFinite(parsed) ? parsed : 0
 }
-export function getMetric(fundamentals: Fundamental[], name: string) {
-  return fundamentals.find(([metric]) => metric === name)?.[1] ?? '0'
+
+export function getMetric(
+  fundamentals: string[][],
+  label: string
+) {
+  return fundamentals.find(([key]) => key === label)?.[1] ?? "0"
 }

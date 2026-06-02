@@ -84,6 +84,31 @@ function getMockChartData() {
   }))
 }
 
+function calculateLast12MonthsDpa(stock: any) {
+  const dividends = stock?.dividendsData?.cashDividends ?? []
+
+  const oneYearAgo = new Date()
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+
+  return dividends
+    .filter((item: any) => {
+      const paymentDate = new Date(
+        item.paymentDate || item.approvedOn || item.lastDatePrior
+      )
+
+      return paymentDate >= oneYearAgo
+    })
+    .reduce((sum: number, item: any) => {
+      const value =
+        Number(item.rate) ||
+        Number(item.value) ||
+        Number(item.amount) ||
+        0
+
+      return sum + value
+    }, 0)
+}
+
 export function useStockSearch() {
   const [tickerInput, setTickerInput] = useState("BBSE3")
   const [asset, setAsset] = useState(getAsset("BBSE3"))
@@ -106,11 +131,17 @@ export function useStockSearch() {
         config.interval
       )
 console.log("STOCK BRAPI:", stock)
+console.log("DIVIDENDS DATA", stock.dividendsData)
 console.log(stock)
 console.log("SUMMARY PROFILE", stock.summaryProfile)
 console.log("FINANCIAL DATA", stock.financialData)
 console.log("KEY STATS", stock.defaultKeyStatistics)
       const fallback = getAsset(normalized)
+      
+      console.log(
+  "DPA REAL",
+  calculateLast12MonthsDpa(stock)
+)
 
       setAsset({
         ticker: stock?.symbol ?? fallback.ticker,
@@ -159,12 +190,11 @@ console.log("KEY STATS", stock.defaultKeyStatistics)
   ],
   [
     "DPA médio",
-    stock?.defaultKeyStatistics?.dividendYield && stock?.regularMarketPrice
-      ? (stock.defaultKeyStatistics.dividendYield * stock.regularMarketPrice)
-          .toFixed(2)
-          .replace(".", ",")
-      : fallback.fundamentals[6][1],
+  stock?.dividendsData?.cashDividends
+    ? calculateLast12MonthsDpa(stock).toFixed(2).replace(".", ",")
+    : fallback.fundamentals[6][1],
   ],
+
   [
     "ROE",
     stock?.financialData?.returnOnEquity

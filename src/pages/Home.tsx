@@ -11,8 +11,7 @@ import { getWatchlist, toggleWatchlist } from "../store/watchlist"
 import BazinCard from "../features/valuation/components/BazinCard"
 import GrahamCard from "../features/valuation/components/GrahamCard"
 import PeterLynchCard from "../features/valuation/components/PeterLynchCard"
-import DcfCard from "../features/valuation/components/PreçoTeto"
-import RealDcfCard from "../features/valuation/components/RealDcfCard"
+import PrecoTeto from "../features/valuation/components/PrecoTeto"
 const TOTAL_SHARES = 1941400000
 
 export default function App() {
@@ -54,10 +53,7 @@ const vpa = parseNumber(getMetric(fundamentals, "VPA"))
   const growth = parseNumber(
   getMetric(fundamentals, "Crescimento do Lucro")
 )
-
-const freeCashflow = parseNumber(
-  getMetric(fundamentals, "Fluxo de Caixa Livre")
-)
+console.log("GROWTH REAL:", growth)
 
 const sharesOutstanding = parseNumber(
   getMetric(fundamentals, "Ações em circulação")
@@ -191,17 +187,11 @@ const sharesOutstanding = parseNumber(
 
 <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
 
-  <DcfCard
-    currentPrice={current}
-    projectedDividendPerShare={dpa}
-    fairValue={dpa * 16}
-  />
-
-  <RealDcfCard
+  <PrecoTeto
   currentPrice={current}
-  freeCashflow={freeCashflow}
+  lpa={lpa}
   sharesOutstanding={sharesOutstanding}
-  growth={growth}
+  baseDpa={dpa}
 />
   </div>
 

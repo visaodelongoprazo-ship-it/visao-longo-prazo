@@ -13,10 +13,10 @@ export async function getStockQuote(
       token: import.meta.env.VITE_BRAPI_TOKEN,
       range,
       interval,
-
       fundamentals: true,
+      dividends: true,
       modules:
-        "summaryProfile,financialData,defaultKeyStatistics"
+        "summaryProfile,financialData,defaultKeyStatistics",
     },
   })
 
