@@ -14,10 +14,23 @@ function money(value: number) {
   }).format(Number.isFinite(value) ? value : 0)
 }
 
-function formatNumber(value: number) {
+function compactMoney(value: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    notation: "compact",
+    maximumFractionDigits: 2,
+  }).format(Number.isFinite(value) ? value : 0)
+}
+
+function number(value: number) {
   return new Intl.NumberFormat("pt-BR").format(
     Number.isFinite(value) ? value : 0
   )
+}
+
+function percent(value: number) {
+  return `${value.toFixed(2).replace(".", ",")}%`
 }
 
 export default function PrecoTeto({
@@ -37,15 +50,12 @@ export default function PrecoTeto({
 
   const result = useMemo(() => {
     const baseShares = Math.max(sharesOutstanding, 1)
-
     const effectiveShares = useTreasury
       ? Math.max(baseShares - treasuryShares, 1)
       : baseShares
 
     const currentProfit = lpa * baseShares
-
-    const projectedProfit =
-      currentProfit * (1 + profitGrowth / 100)
+    const projectedProfit = currentProfit * (1 + profitGrowth / 100)
 
     const projectedDpa =
       (projectedProfit * (payout / 100)) / effectiveShares
@@ -63,7 +73,6 @@ export default function PrecoTeto({
 
     return {
       effectiveShares,
-      currentProfit,
       projectedProfit,
       projectedDpa,
       fairValue,
@@ -90,97 +99,133 @@ export default function PrecoTeto({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[320px_1fr]">
-      <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-        <h3 className="text-lg font-semibold text-slate-900">
-          Preço Teto Projetivo
-        </h3>
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[300px_1fr]">
+      <div className="rounded-[16px] border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-base font-semibold text-slate-900">
+            Preço Teto
+          </h3>
 
-        <div className="mt-5 space-y-4">
-          <InputRow
+          <span className="rounded-lg bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-500">
+            ⓘ Influenciadores
+          </span>
+        </div>
+
+        <div className="space-y-3">
+          <ControlRow
             label="Dividend Yield desejado"
             value={desiredYield}
             suffix="%"
             onChange={setDesiredYield}
           />
 
-          <InputRow
-            label="Payout projetado"
+          <ControlRow
+            label="Payout da empresa"
             value={payout}
             suffix="%"
             onChange={setPayout}
           />
 
-          <InputRow
-            label="Projeção do lucro"
-            value={profitGrowth}
-            suffix="%"
-            onChange={setProfitGrowth}
-          />
+          <div className="border-b border-slate-200 pb-3">
+  <div className="grid grid-cols-[1fr_120px] items-center gap-3">
+    <div className="text-center">
+      <div className="rounded-2xl bg-slate-50 px-4 py-2 text-xs font-medium text-slate-900">
+        {compactMoney(result.projectedProfit)}
+      </div>
+      <div className="mt-1 text-[10px] font-semibold text-slate-700">
+        Lucro Projetivo
+      </div>
+    </div>
 
-          <div className="border-b border-slate-200 pb-4">
-            <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+    <div className="text-center">
+      <div className="flex items-center justify-center gap-2">
+        <button
+          type="button"
+          onClick={() => setProfitGrowth((v) => v - 1)}
+          className="h-5 w-5 rounded-full bg-sky-500 text-xs font-bold text-white"
+        >
+          -
+        </button>
+
+        <input
+          type="number"
+          value={profitGrowth}
+          onChange={(e) => setProfitGrowth(Number(e.target.value))}
+          className="w-16 rounded-xl border border-slate-200 bg-slate-50 px-2 py-1 text-center text-xs"
+        />
+
+        <button
+          type="button"
+          onClick={() => setProfitGrowth((v) => v + 1)}
+          className="h-5 w-5 rounded-full bg-sky-500 text-xs font-bold text-white"
+        >
+          +
+        </button>
+      </div>
+
+      <div className="mt-1 text-[10px] font-semibold text-slate-700">
+        Projeção %
+      </div>
+    </div>
+  </div>
+</div>
+
+          <div className="border-b border-slate-200 pb-3">
+            <label className="flex items-center justify-between gap-2 text-xs font-semibold text-slate-700">
+              <span>Número de papéis</span>
               <input
                 type="checkbox"
                 checked={useTreasury}
-                onChange={(event) => setUseTreasury(event.target.checked)}
+                onChange={(e) => setUseTreasury(e.target.checked)}
               />
-              Descontar ações em tesouraria
             </label>
 
             <input
               type="number"
               value={treasuryShares}
-              onChange={(event) =>
-                setTreasuryShares(Number(event.target.value))
-              }
+              onChange={(e) => setTreasuryShares(Number(e.target.value))}
               disabled={!useTreasury}
-              className="mt-3 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-400"
-              placeholder="Quantidade em tesouraria"
+              placeholder="Ações em tesouraria"
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs disabled:text-slate-400"
             />
           </div>
 
-          <button
-            type="button"
-            onClick={reset}
-            className="w-full rounded-xl bg-slate-50 py-2 text-sm font-semibold text-slate-600"
-          >
-            Reiniciar filtros
-          </button>
+          <div className="flex gap-3 pt-1">
+            <button
+              type="button"
+              className="flex-1 rounded-lg bg-sky-500 py-2 text-xs font-semibold text-white"
+            >
+              Salvar
+            </button>
+
+            <button
+              type="button"
+              onClick={reset}
+              className="flex-1 rounded-lg bg-slate-50 py-2 text-xs font-semibold text-slate-600"
+            >
+              Reiniciar filtros
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <InfoBox title="COTAÇÃO ATUAL" value={money(currentPrice)} />
         <InfoBox
           title="NÚMERO DE PAPÉIS"
-          value={formatNumber(sharesOutstanding)}
+          value={number(result.effectiveShares)}
+          subtitle={useTreasury ? "Sem tesouraria" : "Com tesouraria"}
         />
-        <InfoBox title="LPA ATUAL" value={money(lpa)} />
-        <InfoBox title="DPA ATUAL" value={money(baseDpa)} />
         <InfoBox title="PREÇO TETO" value={money(result.fairValue)} />
-        <InfoBox
-          title="DPA PROJETIVO"
-          value={money(result.projectedDpa)}
-        />
-        <InfoBox
-          title="YIELD PROJETIVO"
-          value={`${result.projectedYield.toFixed(2)}%`}
-        />
-        <InfoBox
-          title="MARGEM SEGURANÇA"
-          value={`${result.marginSafety.toFixed(2)}%`}
-        />
-        <InfoBox
-          title="LUCRO PROJETIVO"
-          value={money(result.projectedProfit)}
-        />
+        <InfoBox title="DPA (PROJETIVO)" value={money(result.projectedDpa)} />
+        <InfoBox title="YIELD (PROJETIVO)" value={percent(result.projectedYield)} />
+        <InfoBox title="MARGEM SEGURANÇA" value={percent(result.marginSafety)} />
       </div>
     </div>
   )
 }
 
-function InputRow({
+function ControlRow({
   label,
   value,
   suffix,
@@ -192,31 +237,45 @@ function InputRow({
   onChange: (value: number) => void
 }) {
   return (
-    <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+    <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-3">
       <input
         type="number"
         value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-        className="w-24 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium"
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-24 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-center text-xs font-medium"
       />
 
-      <span className="text-sm font-semibold text-slate-700">
+      <span className="text-right text-xs font-semibold text-slate-700">
         {label} {suffix}
       </span>
     </div>
   )
 }
 
-function InfoBox({ title, value }: { title: string; value: string }) {
+function InfoBox({
+  title,
+  value,
+  subtitle,
+}: {
+  title: string
+  value: string
+  subtitle?: string
+}) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="text-sm font-bold uppercase text-sky-500">
+    <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="text-xs font-bold uppercase text-sky-500">
         {title}
       </div>
 
-      <div className="mt-3 text-xl font-bold text-slate-900">
+      <div className="mt-3 break-words text-lg font-bold leading-tight text-slate-900">
         {value}
       </div>
+
+      {subtitle && (
+        <div className="mt-2 inline-flex rounded-md border border-sky-200 bg-sky-50 px-2 py-1 text-[10px] font-medium text-sky-600">
+          {subtitle}
+        </div>
+      )}
     </div>
   )
 }
